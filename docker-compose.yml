@@ -1,0 +1,229 @@
+version: '2.1'
+
+volumes:
+  asset-volume:
+  prometheus-data-volume:
+
+
+services:
+  ixortalk-config-server:
+    image: ixortalk/ixortalk-config-server:${IXORTALK_CONFIG_SERVER_VERSION:-latest}
+    expose:
+      - 8899
+    ports:
+      - 8899:8899
+      - 8599:8599
+    environment:
+      - JAVA_OPTS=$JAVA_OPTS -Dspring.cloud.config.server.git.uri=git@github.com:ixortalkadmin/ixortalk.config.${COMPOSE_PROJECT_NAME}.git -Xmx128m
+      - SPRING_PROFILES_ACTIVE=${IXORTALK_PROFILE:-dev}
+      - HEALTH_PATH=${HEALTH_PATH}
+      - MANAGEMENT_PORT=8599
+
+  ixortalk-authserver:
+    image: ixortalk/ixortalk-authserver:${IXORTALK_AUTHSERVER_VERSION:-latest}
+    ports:
+      - 9999:9999
+      - 9599:9599
+    expose:
+      - 9999
+    environment:
+      - SPRING_PROFILES_ACTIVE=${IXORTALK_PROFILE:-dev}
+      - JAVA_OPTS=$JAVA_OPTS -Xmx128m
+      - HEALTH_PATH=${HEALTH_PATH}
+      - MANAGEMENT_PORT=9599
+    depends_on:
+      ixortalk-config-server:
+        condition: service_healthy
+      ixortalk-postgres-authserver:
+        condition: service_healthy
+  ixortalk-gateway:
+    image: ixortalk/ixortalk-gateway:${IXORTALK_GATEWAY_VERSION:-latest}
+    ports:
+      - 8888:8888
+      - 8588:8588
+    expose:
+      - 8888
+      - 8588
+    environment:
+      - SPRING_PROFILES_ACTIVE=${IXORTALK_PROFILE:-dev}
+      - JAVA_OPTS=$JAVA_OPTS -Xmx128m
+      - HEALTH_PATH=${HEALTH_PATH}
+      - MANAGEMENT_PORT=8588
+    depends_on:
+      ixortalk-config-server:
+        condition: service_healthy
+  ixortalk-assetmgmt:
+    image: ixortalk/ixortalk-assetmgmt:${IXORTALK_ASSETMGMT_VERSION:-latest}
+    ports:
+      - 8001:8001
+      - 8501:8501
+    expose:
+      - 8001
+      - 8501
+    environment:
+      - SPRING_PROFILES_ACTIVE=${IXORTALK_PROFILE:-dev}
+      - JAVA_OPTS=$JAVA_OPTS -Xmx128m
+      - HEALTH_PATH=${HEALTH_PATH}
+      - MANAGEMENT_PORT=8501
+    volumes:
+      - asset-volume:/assets
+    depends_on:
+      ixortalk-config-server:
+        condition: service_healthy
+      ixortalk-mongodb-assetmgmt:
+        condition: service_healthy
+  ixortalk-assetstate:
+    image: ixortalk/ixortalk-assetstate:${IXORTALK_ASSETSTATE_VERSION:-latest}
+    ports:
+      - 8002:8002
+      - 8502:8502
+    expose:
+      - 8002
+      - 8502
+    environment:
+      - SPRING_PROFILES_ACTIVE=${IXORTALK_PROFILE:-dev}
+      - JAVA_OPTS=$JAVA_OPTS -Xmx128m
+      - HEALTH_PATH=${HEALTH_PATH}
+      - MANAGEMENT_PORT=8502
+    depends_on:
+      ixortalk-config-server:
+        condition: service_healthy
+  ixortalk-mailing-service:
+    image: ixortalk/ixortalk-mailing-service:${IXORTALK_MAILING_SERVICE_VERSION:-latest}
+    ports:
+      - 8003:8003
+      - 8503:8503
+    expose:
+      - 8003
+      - 8503
+    environment:
+      - SPRING_PROFILES_ACTIVE=${IXORTALK_PROFILE:-dev}
+      - JAVA_OPTS=$JAVA_OPTS -Xmx128m
+      - HEALTH_PATH=${HEALTH_PATH}
+      - MANAGEMENT_PORT=8503
+    depends_on:
+      ixortalk-config-server:
+        condition: service_healthy
+
+  prometheus:
+    image: ixortalk/ixortalk-prometheus:${IXORTALK_PROMETHEUS_VERSION:-latest}
+    expose:
+      - 9090
+    ports:
+      - 9090:9090
+    environment:
+      - IXORTALK_PROFILE=${IXORTALK_PROFILE:-dev}
+    volumes:
+      - prometheus-data-volume:/prometheus
+      - asset-volume:/assets:ro
+    command:
+      --web.external-url=http://localhost:8888/prometheus
+      --config.file=/etc/prometheus/config.yml
+    dns_search: .
+    depends_on:
+      ixortalk-config-server:
+        condition: service_healthy
+      cadvisor:
+        condition: service_started
+  alertmanager:
+    image: ixortalk/ixortalk-alertmanager:${IXORTALK_ALERTMANAGER_VERSION:-latest}
+    expose:
+      - 9093
+    ports:
+      - 9093:9093
+    environment:
+      - IXORTALK_PROFILE=${IXORTALK_PROFILE:-dev}
+    command:
+      --web.external-url=http://localhost:8888/alertmanager
+      --config.file=/etc/alertmanager/config.yml
+    dns_search: .
+    depends_on:
+      ixortalk-config-server:
+        condition: service_healthy
+
+  node-exporter:
+    image: prom/node-exporter:${IXORTALK_NODE_EXPORTER_VERSION:-latest}
+    volumes:
+      - /proc:/host/proc
+      - /sys:/host/sysfs
+      - /:/rootfs
+    command:
+      --path.procfs=/host/proc
+      --path.sysfs=/host/sysfs
+      --collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc|rootfs/var/lib/docker|rootfs/run/docker/netns|rootfs/var/lib/docker|rootfs/var/run/docker/netns)($$|/)"
+      --no-collector.timex
+      --no-collector.filesystem
+    expose:
+      - 9100
+    ports:
+      - 9100:9100
+
+  cadvisor:
+    image: google/cadvisor:${IXORTALK_CADVISOR_VERSION:-latest}
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    expose:
+      - 8080
+    ports:
+      - 8080:8080
+
+  ixortalk-grafana:
+    image: ixortalk/ixortalk-grafana:${IXORTALK_GRAFANA_VERSION:-latest}
+    environment:
+      - IXORTALK_PROFILE=${IXORTALK_PROFILE:-dev}
+      - GF_SECURITY_ADMIN_PASSWORD=adminadmin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_BASIC_ENABLED=false
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:/grafana
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource,vonage-status-panel
+    depends_on:
+      ixortalk-config-server:
+        condition: service_healthy
+    ports:
+      - 3000:3000
+
+  blackbox-exporter:
+      image: ixortalk/ixortalk-blackbox-exporter:${IXORTALK_BLACKBOX_EXPORTER_VERSION:-latest}
+      expose:
+        - 9115
+      ports:
+        - 9115:9115
+      environment:
+      - IXORTALK_PROFILE=${IXORTALK_PROFILE:-dev}
+      depends_on:
+        ixortalk-config-server:
+          condition: service_healthy
+      dns_search: .
+      healthcheck:
+        test: ["CMD", "wget","-q","http://localhost:9115/probe?module=http_2xx&target=http%3A%2F%2Fblackbox-exporter%3A9115%2F","-O","/dev/null"]
+
+  ixortalk-static-content-nginx:
+      image: ixortalk/ixortalk.static.content.nginx.common:${IXORTALK_STATIC_CONTENT_NGINX_VERSION:-latest}
+      expose:
+        - 7200
+      ports:
+        - 7200:7200
+
+  ixortalk-postgres-authserver:
+    image: healthcheck/postgres
+    expose:
+      - 5432
+    environment:
+      - POSTGRES_USER=ixortalk_authserver
+      - POSTGRES_PASSWORD=ixortalk_authserver
+      - POSTGRES_DB=ixortalk_authserver
+  ixortalk-mongodb-assetmgmt:
+    image: ixortalk/ixortalk-mongodb:${IXORTALK_MONGODB_VERSION:-latest}
+    ports:
+      - 27017:27017
+    expose:
+      - 27017
+    environment:
+      - MONGODB_USERNAME=ixortalk_assetmgmt
+      - MONGODB_PASSWORD=ixortalk_assetmgmt
+      - MONGODB_DATABASE=ixortalk_assetmgmt
