@@ -26,7 +26,8 @@ Some important remarks to be made:
 
 * Properties `${ixortalk.loadbalancer.internal.host}` and `${ixortalk.loadbalancer.external.host}` should point to a resolvable ip-address for the docker host, resolvable on the host and within the docker containers.  They are configured to be `10.200.10.1` in the demo configuration, either configure this to the actual ip address or add an alias: Eg. `sudo ifconfig lo0 alias 10.200.10.1/24`
 * When the platform is initially started, the very first request might timeout, after a refresh it should work fine
-* By default there is an admin user which can be used to login to the platform: `admin`/`admin`     
+* By default there is an admin user which can be used to login to the platform: `admin`/`admin`    
+* No valid SMTP server is configured (dummy value is set), so either configure your own SMTP server or have a look at the logs from the mailing service to view the actual content.
 
 ## License
 ```
