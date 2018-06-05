@@ -106,6 +106,19 @@ services:
       ixortalk-config-server:
         condition: service_healthy
 
+  ixortalk-assetmgmt-ui:
+    image: ixortalk/ixortalk-assetmgmt-ui:${IXORTALK_ASSETMGMT_UI_VERSION:-latest}
+    ports:
+      - 7001:7001
+    environment:
+      - IXORTALK_PROFILE=${IXORTALK_PROFILE:-dev}
+    expose:
+      - 7001
+    depends_on:
+      ixortalk-config-server:
+        condition: service_healthy
+
+
   prometheus:
     image: ixortalk/ixortalk-prometheus:${IXORTALK_PROMETHEUS_VERSION:-latest}
     expose:
