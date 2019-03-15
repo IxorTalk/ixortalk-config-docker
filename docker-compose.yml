@@ -241,3 +241,11 @@ services:
       - MONGODB_USERNAME=ixortalk_assetmgmt
       - MONGODB_PASSWORD=ixortalk_assetmgmt
       - MONGODB_DATABASE=ixortalk_assetmgmt
+
+  prometheus-faker1:
+    image: ixortalk/ixortalk.prometheus.faker:${IXORTALK_PROMETHEUS_FAKER_VERSION:-latest}
+    hostname: prometheus-faker1
+
+  prometheus-faker2:
+    image: ixortalk/ixortalk.prometheus.faker:${IXORTALK_PROMETHEUS_FAKER_VERSION:-latest}
+    hostname: prometheus-faker2
