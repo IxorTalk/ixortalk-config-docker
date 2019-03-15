@@ -16,7 +16,8 @@ services:
     environment:
       - JAVA_OPTS=$JAVA_OPTS -Xmx128m
       - SPRING_PROFILES_ACTIVE=${IXORTALK_PROFILE:-dev}
-      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/IxorTalk/ixortalk.config.${COMPOSE_PROJECT_NAME}.git
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=git@github.com:ddewaele/ixortalk.config.${COMPOSE_PROJECT_NAME}.git
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT-LABEL=dev_fakers
       - HEALTH_PATH=${HEALTH_PATH}
       - MANAGEMENT_PORT=8599
 
@@ -245,8 +246,13 @@ services:
   prometheus-faker1:
     image: ixortalk/ixortalk.prometheus.faker:${IXORTALK_PROMETHEUS_FAKER_VERSION:-latest}
     hostname: prometheus-faker1
+    depends_on:
+      ixortalk-config-server:
+        condition: service_healthy
 
   prometheus-faker2:
     image: ixortalk/ixortalk.prometheus.faker:${IXORTALK_PROMETHEUS_FAKER_VERSION:-latest}
     hostname: prometheus-faker2
-    
+    depends_on:
+      ixortalk-config-server:
+        condition: service_healthy
