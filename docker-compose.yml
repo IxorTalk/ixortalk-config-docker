@@ -16,8 +16,6 @@ services:
     environment:
       - JAVA_OPTS=$JAVA_OPTS -Xmx128m
       - SPRING_PROFILES_ACTIVE=${IXORTALK_PROFILE:-dev}
-      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=git@github.com:ddewaele/ixortalk.config.${COMPOSE_PROJECT_NAME}.git
-      - SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT-LABEL=dev_fakers
       - HEALTH_PATH=${HEALTH_PATH}
       - MANAGEMENT_PORT=8599
 
@@ -154,6 +152,7 @@ services:
       - 9093:9093
     environment:
       - IXORTALK_PROFILE=${IXORTALK_PROFILE:-dev}
+      - IXORTALK_CONFIG_SERVER_LABEL=${IXORTALK_CONFIG_SERVER_LABEL:-dev}
     command:
       --web.external-url=http://localhost:8888/alertmanager
       --config.file=/etc/alertmanager/config.yml
