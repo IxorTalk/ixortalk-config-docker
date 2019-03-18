@@ -38,6 +38,7 @@ services:
         condition: service_healthy
       ixortalk-postgres-authserver:
         condition: service_healthy
+
   ixortalk-gateway:
     image: ixortalk/ixortalk-gateway:${IXORTALK_GATEWAY_VERSION:-latest}
     ports:
@@ -54,6 +55,7 @@ services:
     depends_on:
       ixortalk-config-server:
         condition: service_healthy
+
   ixortalk-assetmgmt:
     image: ixortalk/ixortalk-assetmgmt:${IXORTALK_ASSETMGMT_VERSION:-latest}
     ports:
@@ -74,6 +76,7 @@ services:
         condition: service_healthy
       ixortalk-mongodb-assetmgmt:
         condition: service_healthy
+
   ixortalk-assetstate:
     image: ixortalk/ixortalk-assetstate:${IXORTALK_ASSETSTATE_VERSION:-latest}
     ports:
@@ -90,6 +93,7 @@ services:
     depends_on:
       ixortalk-config-server:
         condition: service_healthy
+
   ixortalk-mailing-service:
     image: ixortalk/ixortalk-mailing-service:${IXORTALK_MAILING_SERVICE_VERSION:-latest}
     ports:
@@ -113,12 +117,12 @@ services:
       - 7001:7001
     environment:
       - IXORTALK_PROFILE=${IXORTALK_PROFILE:-dev}
+      - IXORTALK_CONFIG_SERVER_LABEL=${IXORTALK_CONFIG_SERVER_LABEL:-dev}
     expose:
       - 7001
     depends_on:
       ixortalk-config-server:
         condition: service_healthy
-
 
   prometheus:
     image: ixortalk/ixortalk-prometheus:${IXORTALK_PROMETHEUS_VERSION:-latest}
@@ -128,6 +132,7 @@ services:
       - 9090:9090
     environment:
       - IXORTALK_PROFILE=${IXORTALK_PROFILE:-dev}
+      - IXORTALK_CONFIG_SERVER_LABEL=${IXORTALK_CONFIG_SERVER_LABEL:-dev}
     volumes:
       - prometheus-data-volume:/prometheus
       - asset-volume:/assets:ro
@@ -140,6 +145,7 @@ services:
         condition: service_healthy
       cadvisor:
         condition: service_started
+
   alertmanager:
     image: ixortalk/ixortalk-alertmanager:${IXORTALK_ALERTMANAGER_VERSION:-latest}
     expose:
@@ -189,6 +195,7 @@ services:
     image: ixortalk/ixortalk-grafana:${IXORTALK_GRAFANA_VERSION:-latest}
     environment:
       - IXORTALK_PROFILE=${IXORTALK_PROFILE:-dev}
+      - IXORTALK_CONFIG_SERVER_LABEL=${IXORTALK_CONFIG_SERVER_LABEL:-dev}
       - GF_SECURITY_ADMIN_PASSWORD=adminadmin
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_AUTH_BASIC_ENABLED=false
@@ -210,6 +217,7 @@ services:
         - 9115:9115
       environment:
       - IXORTALK_PROFILE=${IXORTALK_PROFILE:-dev}
+      - IXORTALK_CONFIG_SERVER_LABEL=${IXORTALK_CONFIG_SERVER_LABEL:-dev}
       depends_on:
         ixortalk-config-server:
           condition: service_healthy
@@ -232,6 +240,7 @@ services:
       - POSTGRES_USER=ixortalk_authserver
       - POSTGRES_PASSWORD=ixortalk_authserver
       - POSTGRES_DB=ixortalk_authserver
+
   ixortalk-mongodb-assetmgmt:
     image: ixortalk/ixortalk-mongodb:${IXORTALK_MONGODB_VERSION:-latest}
     ports:
@@ -244,15 +253,19 @@ services:
       - MONGODB_DATABASE=ixortalk_assetmgmt
 
   prometheus-faker1:
-    image: ixortalk/ixortalk.prometheus.faker:${IXORTALK_PROMETHEUS_FAKER_VERSION:-latest}
+    image: ixortalk/ixortalk-prometheus-faker:${IXORTALK_PROMETHEUS_FAKER_VERSION:-latest}
     hostname: prometheus-faker1
+    environment:
+      - IXORTALK_CONFIG_SERVER_LABEL=${IXORTALK_CONFIG_SERVER_LABEL:-dev}
     depends_on:
       ixortalk-config-server:
         condition: service_healthy
 
   prometheus-faker2:
-    image: ixortalk/ixortalk.prometheus.faker:${IXORTALK_PROMETHEUS_FAKER_VERSION:-latest}
+    image: ixortalk/ixortalk-prometheus-faker:${IXORTALK_PROMETHEUS_FAKER_VERSION:-latest}
     hostname: prometheus-faker2
+    environment:
+      - IXORTALK_CONFIG_SERVER_LABEL=${IXORTALK_CONFIG_SERVER_LABEL:-dev}
     depends_on:
       ixortalk-config-server:
         condition: service_healthy
