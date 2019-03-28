@@ -15,6 +15,7 @@ services:
       - 8599:8599
     environment:
       - JAVA_OPTS=$JAVA_OPTS -Xmx128m
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL=${IXORTALK_CONFIG_SERVER_LABEL:-master}
       - SPRING_PROFILES_ACTIVE=${IXORTALK_PROFILE:-dev}
       - HEALTH_PATH=${HEALTH_PATH}
       - MANAGEMENT_PORT=8599
@@ -259,6 +260,8 @@ services:
     depends_on:
       ixortalk-config-server:
         condition: service_healthy
+      ixortalk-authserver:
+        condition: service_healthy
 
   prometheus-faker2:
     image: ixortalk/ixortalk-prometheus-faker:${IXORTALK_PROMETHEUS_FAKER_VERSION:-latest}
@@ -267,4 +270,6 @@ services:
       - IXORTALK_CONFIG_SERVER_LABEL=${IXORTALK_CONFIG_SERVER_LABEL:-dev}
     depends_on:
       ixortalk-config-server:
+        condition: service_healthy
+      ixortalk-authserver:
         condition: service_healthy
